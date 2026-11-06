@@ -144,6 +144,56 @@ $ python3 -m budget_app add
 - 잘못된 날짜/타입/금액(0·음수·문자)은 이유를 보여주고 **다시 입력**받습니다.
 - 등록되지 않은 카테고리는 안내 후 "새로 등록할까요? [y/N]"으로 등록을 유도하고, `n`이면 다시 입력받습니다.
 
+<details>
+<summary>add 호출 순서 (어떤 파일의 어떤 함수가 쓰이는지)</summary>
+
+```
+python -m budget_app add
+│
+├─ 1. __main__.py            → cli.main()을 호출
+├─ 2. cli.py                 main() → build_parser() → parse_args()   # "add"를 해석
+│                            run()  [@handle_errors 적용]
+│                              └ app_context.build_context()          # 저장소·서비스 조립
+│                              └ args.handler(args, ctx)              # = add.handle
+│
+├─ 3. commands/add.py        handle(args, ctx)                        # 화면 입출력 담당
+│     │
+│     ├ core/prompts.py      ask()  ← 날짜/타입/금액/메모/태그를 입력받고 검증, 틀리면 재입력
+│     │   └ core/validators.py  parse_date / parse_type / parse_amount / parse_memo / parse_tags
+│     │
+│     ├ add.py               _ask_category(ctx.categories)            # 카테고리 입력
+│     │   └ services/category_service.py  names()                     # 등록된 목록 조회
+│     │       └ storage/category_repository.py  names()
+│     │
+│     └ ctx.transactions.create(...)                                  # 저장 요청
+│
+├─ 4. services/transaction_service.py   TransactionService.create()   # 규칙 담당
+│     ├ category_service.ensure_exists()      # 카테고리 존재 확인 (없으면 NotFoundError)
+│     ├ transaction_repository.iter_ids()     # 기존 id 목록 수집
+│     ├ _new_id()                             # 중복 없는 8자리 id 생성
+│     ├ _clock.now_iso()                      # 생성 시각 기록
+│     └ Transaction(...)                      # models/transaction.py, 거래 객체 생성
+│
+├─ 5. storage/transaction_repository.py add(tx)
+│     └ tx.to_dict()                          # 객체 → dict
+│
+├─ 6. storage/jsonl_file.py             append() → append_many()
+│     └ transactions.jsonl 끝에 한 줄 추가 + fsync
+│
+└─ 7. add.py handle()로 복귀            "저장 완료! 생성된 거래 id" 출력
+      └ core/formatting.py describe(tx)
+```
+
+| 계층 | 파일 | 하는 일 |
+| --- | --- | --- |
+| 명령(commands) | `add.py` | 질문하고 입력받기, 결과 출력 |
+| 서비스(services) | `transaction_service.py` | 카테고리 확인, id·시간 부여 |
+| 저장소(storage) | `transaction_repository.py`, `jsonl_file.py` | 파일에 한 줄 쓰기 |
+| 모델(models) | `transaction.py` | 거래 데이터 구조 |
+| 공통(core) | `prompts.py`, `validators.py`, `formatting.py` | 입력 검증과 출력 |
+
+</details>
+
 ### update (옵션 방식 - 안 A로 고정)
 `update --id <id> [--date ...] [--type ...] [--category ...] [--amount ...] [--memo ...] [--tags ...]`
 - 지정한 필드만 바뀝니다. 아무 필드도 없으면 오류입니다.

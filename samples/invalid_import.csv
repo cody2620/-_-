@@ -1,0 +1,6 @@
+date,type,category,amount,memo,tags
+2026-11-10,expense,food,5000,정상 행,
+2026-13-01,expense,food,5000,날짜 오류,
+2026-11-11,spend,food,5000,타입 오류,
+2026-11-12,expense,game,5000,카테고리 오류,
+2026-11-13,expense,food,-300,금액 오류,

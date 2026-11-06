@@ -1,0 +1,7 @@
+date,type,category,amount,memo,tags
+2026-11-01,income,allowance,300000,11월 용돈,monthly
+2026-11-02,expense,food,8500,편의점 점심,"lunch,school"
+2026-11-03,expense,transport,1500,버스,commute
+2026-11-05,expense,shopping,45000,운동화,
+2026-11-07,expense,food,12000,친구랑 저녁,"dinner,friend"
+2026-10-28,expense,food,6000,떡볶이,snack
